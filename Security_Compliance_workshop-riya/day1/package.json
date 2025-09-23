@@ -1,0 +1,30 @@
+{
+  "name": "devsecops-demo",
+  "version": "1.0.0",
+  "description": "DevSecOps Demo with intentional secrets for educational purposes",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest"
+  },
+  "keywords": [
+    "devsecops",
+    "security",
+    "nodejs",
+    "demo"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.0"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "nodemon": "^3.0.1"
+  }
+}
