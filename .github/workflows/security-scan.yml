@@ -225,6 +225,7 @@ jobs:
       
       - name: Install dependencies
         run: npm install
+        working-directory: Security_Compliance_workshop-riya/day3/package.json
       
       - name: Start Express App
         run: |
