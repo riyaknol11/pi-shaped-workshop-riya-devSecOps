@@ -21,3 +21,4 @@ This project demonstrates secure coding practices and automated security scannin
 ](<screenshots/vulnerability.png>)
 
 
+# Security Demo
