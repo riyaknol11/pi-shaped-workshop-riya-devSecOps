@@ -22,3 +22,8 @@ This project demonstrates secure coding practices and automated security scannin
 
 
 # Security Demo
+
+![alt text](<screenshots/Workflow_Vulnerabilities.png>)
+
+
+![alt text](<screenshots/secured_application.png>)
