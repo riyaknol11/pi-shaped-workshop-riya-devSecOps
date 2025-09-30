@@ -27,3 +27,5 @@ This project demonstrates secure coding practices and automated security scannin
 
 
 ![alt text](<screenshots/secured_application.png>)
+
+![alt text](<screenshots/Screenshot from 2025-09-30 13-45-15.png>)
