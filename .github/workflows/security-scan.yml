@@ -22,6 +22,7 @@ jobs:
       
       - name: Install dependencies
         run: npm install
+        working-directory: Security_Compliance_workshop-riya/day3
       
       - name: Install ESLint Security Plugin
         run: |
@@ -225,7 +226,7 @@ jobs:
       
       - name: Install dependencies
         run: npm install
-        working-directory: Security_Compliance_workshop-riya/day3/package.json
+        working-directory: Security_Compliance_workshop-riya/day3
       
       - name: Start Express App
         run: |
