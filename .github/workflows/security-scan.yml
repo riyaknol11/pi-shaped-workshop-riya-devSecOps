@@ -62,7 +62,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload ESLint Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: eslint-report
           path: |
@@ -90,7 +90,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload NodeJsScan Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: nodejsscan-report
@@ -115,7 +115,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload Semgrep Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: semgrep-report
@@ -147,7 +147,7 @@ jobs:
             --no-git || true
       
       - name: Upload Gitleaks Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: gitleaks-report
@@ -172,7 +172,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload NPM Audit Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: npm-audit-report
           path: |
@@ -203,7 +203,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload Snyk Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: snyk-report
@@ -244,7 +244,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload ZAP Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: zap-report
@@ -274,7 +274,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload Retire.js Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: retire-report
@@ -289,7 +289,7 @@ jobs:
     if: always()
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       
       - name: Display Summary
         run: |
@@ -297,9 +297,9 @@ jobs:
           echo "║       Security Scan Summary - Complete               ║"
           echo "╚═══════════════════════════════════════════════════════╝"
           echo ""
-          echo "✅ All security scans completed!"
+          echo "All security scans completed!"
           echo ""
-          echo "📊 Available Reports:"
+          echo "Available Reports:"
           echo "  • ESLint Security Scan"
           echo "  • NodeJsScan SAST"
           echo "  • Semgrep SAST"
