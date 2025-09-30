@@ -1,0 +1,313 @@
+name: Security Scanning Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  eslint-security-scan:
+    name: ESLint Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Install ESLint Security Plugin
+        run: |
+          npm install --save-dev eslint@8.57.0
+          npm install --save-dev eslint-plugin-security@1.7.1
+      
+      - name: Create ESLint Config
+        run: |
+          cat > .eslintrc.json << 'EOF'
+          {
+            "env": {
+              "node": true,
+              "es2021": true
+            },
+            "extends": ["eslint:recommended"],
+            "plugins": ["security"],
+            "rules": {
+              "security/detect-object-injection": "warn",
+              "security/detect-non-literal-regexp": "warn",
+              "security/detect-unsafe-regex": "warn",
+              "security/detect-buffer-noassert": "warn",
+              "security/detect-child-process": "warn",
+              "security/detect-disable-mustache-escape": "warn",
+              "security/detect-eval-with-expression": "warn",
+              "security/detect-no-csrf-before-method-override": "warn",
+              "security/detect-non-literal-fs-filename": "warn",
+              "security/detect-non-literal-require": "warn",
+              "security/detect-possible-timing-attacks": "warn",
+              "security/detect-pseudoRandomBytes": "warn"
+            }
+          }
+          EOF
+      
+      - name: Run ESLint Security Scan
+        run: |
+          npx eslint . --ext .js --format html --output-file eslint-report.html || true
+          npx eslint . --ext .js --format json --output-file eslint-report.json || true
+        continue-on-error: true
+      
+      - name: Upload ESLint Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: eslint-report
+          path: |
+            eslint-report.html
+            eslint-report.json
+
+  nodejs-scan:
+    name: NodeJsScan SAST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      
+      - name: Install NodeJsScan
+        run: pip install nodejsscan
+      
+      - name: Run NodeJsScan
+        run: |
+          nodejsscan --directory . --output nodejsscan-report.json || true
+        continue-on-error: true
+      
+      - name: Upload NodeJsScan Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: nodejsscan-report
+          path: nodejsscan-report.json
+
+  semgrep-scan:
+    name: Semgrep SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/nodejs
+            p/express
+            p/owasp-top-ten
+            p/javascript
+        continue-on-error: true
+      
+      - name: Upload Semgrep Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: semgrep-report
+          path: semgrep.sarif
+
+  gitleaks-scan:
+    name: Gitleaks Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_SUMMARY: true
+        continue-on-error: true
+      
+      - name: Generate Gitleaks Report
+        if: always()
+        run: |
+          docker run --rm -v $(pwd):/path zricethezav/gitleaks:latest detect \
+            --source="/path" \
+            --report-path="/path/gitleaks-report.json" \
+            --report-format=json \
+            --no-git || true
+      
+      - name: Upload Gitleaks Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+
+  npm-audit:
+    name: NPM Audit - Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Run NPM Audit
+        run: |
+          npm audit --json > npm-audit-report.json || true
+          npm audit > npm-audit-report.txt || true
+        continue-on-error: true
+      
+      - name: Upload NPM Audit Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: npm-audit-report
+          path: |
+            npm-audit-report.json
+            npm-audit-report.txt
+
+  snyk-scan:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+      
+      - name: Run Snyk Test
+        run: |
+          snyk test --json > snyk-report.json || true
+          snyk test > snyk-report.txt || true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
+      
+      - name: Upload Snyk Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: snyk-report
+          path: |
+            snyk-report.json
+            snyk-report.txt
+
+  zap-scan:
+    name: OWASP ZAP DAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Start Express App
+        run: |
+          node app.js &
+          sleep 10
+        continue-on-error: true
+      
+      - name: Verify App is Running
+        run: curl http://localhost:3000 || echo "App not responding"
+      
+      - name: Run ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: 'http://localhost:3000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+        continue-on-error: true
+      
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: zap-report
+          path: |
+            report_html.html
+            report_json.json
+
+  retire-js-scan:
+    name: Retire.js - JavaScript Library Scanner
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Retire.js
+        run: npm install -g retire
+      
+      - name: Run Retire.js
+        run: |
+          retire --outputformat json --outputpath retire-report.json || true
+          retire > retire-report.txt || true
+        continue-on-error: true
+      
+      - name: Upload Retire.js Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: retire-report
+          path: |
+            retire-report.json
+            retire-report.txt
+
+  summary:
+    name: Security Scan Summary
+    needs: [eslint-security-scan, nodejs-scan, semgrep-scan, gitleaks-scan, npm-audit, zap-scan, retire-js-scan]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+      
+      - name: Display Summary
+        run: |
+          echo "╔═══════════════════════════════════════════════════════╗"
+          echo "║       Security Scan Summary - Complete               ║"
+          echo "╚═══════════════════════════════════════════════════════╝"
+          echo ""
+          echo "✅ All security scans completed!"
+          echo ""
+          echo "📊 Available Reports:"
+          echo "  • ESLint Security Scan"
+          echo "  • NodeJsScan SAST"
+          echo "  • Semgrep SAST"
+          echo "  • Gitleaks Secret Scanning"
+          echo "  • NPM Audit"
+          echo "  • Snyk Vulnerability Scan"
+          echo "  • OWASP ZAP DAST"
+          echo "  • Retire.js Library Scanner"
+          echo ""
+          echo "📁 Download artifacts below to view detailed reports"
+          echo ""
+          ls -R
